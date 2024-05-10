@@ -89,7 +89,7 @@ where
         let res: Result<_> = map
             .into_iter()
             .map(|(k, v)| {
-                let builtin = crate::builtins::resolve(&k)?;
+                let builtin = context.resolve_builtin(&k)?;
                 Ok((v.0, (k, builtin)))
             })
             .collect();
