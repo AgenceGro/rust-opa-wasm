@@ -32,6 +32,7 @@ pub trait Builtin<C>: Send + Sync {
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, anyhow::Error>> + Send + 'a>>;
 }
 
+///
 #[derive(Clone)]
 pub struct WrappedBuiltin<F, C, const ASYNC: bool, const RESULT: bool, const CONTEXT: bool, P> {
     func: F,
@@ -63,12 +64,14 @@ pub trait BuiltinFunc<
     P: 'static,
 >: Sized + Send + Sync + 'static
 {
+    ///
     fn call<'a>(
         &'a self,
         context: &'a mut C,
         args: &'a [&'a [u8]],
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, anyhow::Error>> + Send + 'a>>;
 
+    ///
     fn wrap(self) -> Box<dyn Builtin<C>> {
         Box::new(WrappedBuiltin {
             func: self,
