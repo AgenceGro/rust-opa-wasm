@@ -33,7 +33,7 @@ pub trait Builtin<C>: Send + Sync {
 }
 
 #[derive(Clone)]
-struct WrappedBuiltin<F, C, const ASYNC: bool, const RESULT: bool, const CONTEXT: bool, P> {
+pub struct WrappedBuiltin<F, C, const ASYNC: bool, const RESULT: bool, const CONTEXT: bool, P> {
     func: F,
     _marker: PhantomData<fn() -> (C, P)>,
 }
@@ -55,7 +55,7 @@ where
 /// A utility trait used to help constructing [`Builtin`]s out of a regular
 /// function, abstracting away the parameters deserialization, the return value
 /// serialization, for async/non-async variants, and Result/non-Result variants
-pub(crate) trait BuiltinFunc<
+pub trait BuiltinFunc<
     C: 'static,
     const ASYNC: bool,
     const RESULT: bool,
