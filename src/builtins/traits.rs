@@ -303,6 +303,35 @@ trait_impl!(first: P1, second: P2);
 trait_impl!(first: P1, second: P2, third: P3);
 trait_impl!(first: P1, second: P2, third: P3, fourth: P4);
 
+// impl<F, C, R, E> BuiltinFunc<C, true, true, true, (String,)> for F
+// where
+//     C: EvaluationContext,
+//     F: Fn(&mut C, String) -> Pin<Box<dyn Future<Output = Result<R, E>> + Send>> + Sync + Send + 'static,
+//     R: Serialize + 'static,
+//     E: 'static,
+//     anyhow::Error: From<E>,
+// {
+//     trait_body! {
+//         (arg1: String),
+//         async = true,
+//         result = true,
+//         context = true
+//     }
+// }
+
+// impl<F, C> BuiltinFunc<C, true, true, true, (String,)> for F
+// where
+//     C: EvaluationContext,
+//     F: Fn(&mut C, String) -> Pin<Box<dyn Future<Output = String> + Send>> + Sync + Send + 'static,
+// {
+//     trait_body! {
+//         (arg1: String),
+//         async = true, 
+//         result = true,
+//         context = true
+//     }
+// }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -313,6 +342,35 @@ mod tests {
         let mut ctx = DefaultContext::default();
         let uppercase = |foo: String| foo.to_uppercase();
         let uppercase: Box<dyn Builtin<DefaultContext>> = uppercase.wrap();
+        let args = [b"\"hello\"" as &[u8]];
+        let result = uppercase.call(&mut ctx, &args[..]).await.unwrap();
+        assert_eq!(result, b"\"HELLO\"");
+    }
+
+    async fn _test_async_builtin(arg1: String) -> String {
+        arg1.to_uppercase()
+    }
+
+    #[tokio::test]
+    async fn builtins_async_call() {
+        let mut ctx = DefaultContext::default();
+        let uppercase: Box<dyn Builtin<DefaultContext>> = _test_async_builtin.wrap();
+        let args = [b"\"hello\"" as &[u8]];
+        let result = uppercase.call(&mut ctx, &args[..]).await.unwrap();
+        assert_eq!(result, b"\"HELLO\"");
+    }
+
+    fn _test_async_ctx_builtin(_ctx: &mut DefaultContext, arg1: String) -> impl Future<Output = Result<String>>
+    {
+        Box::pin(async move {
+            Ok(arg1.to_uppercase())
+        })
+    }
+
+    #[tokio::test]
+    async fn builtins_async_call_with_context() {
+        let mut ctx = DefaultContext::default();
+        let uppercase: Box<dyn Builtin<DefaultContext>> = _test_async_ctx_builtin.wrap();
         let args = [b"\"hello\"" as &[u8]];
         let result = uppercase.call(&mut ctx, &args[..]).await.unwrap();
         assert_eq!(result, b"\"HELLO\"");
