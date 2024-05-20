@@ -14,9 +14,9 @@
 
 #![allow(clippy::module_name_repetitions)]
 
-use std::collections::HashMap;
 use crate::builtins::traits::{Builtin, BuiltinFunc};
-use anyhow::{Result, bail};
+use anyhow::{bail, Result};
+use std::collections::HashMap;
 
 #[cfg(feature = "time")]
 use chrono::TimeZone;
@@ -59,6 +59,12 @@ pub trait EvaluationContext: Send + 'static {
     ///
     /// Returns an error if the builtin is not known
     fn resolve_builtin<C: EvaluationContext>(&self, name: &str) -> Result<Box<dyn Builtin<C>>>;
+
+    ///
+    type Helper;
+
+    ///
+    fn helper(&mut self) -> Option<&mut Self::Helper>;
 }
 
 /// The default evaluation context implementation
@@ -82,6 +88,12 @@ impl Default for DefaultContext {
 }
 
 impl EvaluationContext for DefaultContext {
+    type Helper = ();
+
+    fn helper(&mut self) -> Option<&mut Self::Helper> {
+        None
+    }
+
     #[cfg(feature = "rng")]
     type Rng = rand::rngs::ThreadRng;
 
@@ -127,7 +139,9 @@ impl EvaluationContext for DefaultContext {
     fn resolve_builtin<C: EvaluationContext>(&self, name: &str) -> Result<Box<dyn Builtin<C>>> {
         match name {
             #[cfg(feature = "base64url-builtins")]
-            "base64url.encode_no_pad" => Ok(crate::builtins::impls::base64url::encode_no_pad.wrap()),
+            "base64url.encode_no_pad" => {
+                Ok(crate::builtins::impls::base64url::encode_no_pad.wrap())
+            }
 
             #[cfg(all(feature = "crypto-md5-builtins", feature = "crypto-hmac-builtins"))]
             "crypto.hmac.md5" => Ok(crate::builtins::impls::crypto::hmac::md5.wrap()),
@@ -166,7 +180,9 @@ impl EvaluationContext for DefaultContext {
             "graph.reachable_paths" => Ok(crate::builtins::impls::graph::reachable_paths.wrap()),
             "graphql.is_valid" => Ok(crate::builtins::impls::graphql::is_valid.wrap()),
             "graphql.parse" => Ok(crate::builtins::impls::graphql::parse.wrap()),
-            "graphql.parse_and_verify" => Ok(crate::builtins::impls::graphql::parse_and_verify.wrap()),
+            "graphql.parse_and_verify" => {
+                Ok(crate::builtins::impls::graphql::parse_and_verify.wrap())
+            }
             "graphql.parse_query" => Ok(crate::builtins::impls::graphql::parse_query.wrap()),
             "graphql.parse_schema" => Ok(crate::builtins::impls::graphql::parse_schema.wrap()),
 
@@ -198,7 +214,9 @@ impl EvaluationContext for DefaultContext {
             #[cfg(feature = "json-builtins")]
             "json.patch" => Ok(crate::builtins::impls::json::patch.wrap()),
 
-            "net.cidr_contains_matches" => Ok(crate::builtins::impls::net::cidr_contains_matches.wrap()),
+            "net.cidr_contains_matches" => {
+                Ok(crate::builtins::impls::net::cidr_contains_matches.wrap())
+            }
             "net.cidr_expand" => Ok(crate::builtins::impls::net::cidr_expand.wrap()),
             "net.cidr_merge" => Ok(crate::builtins::impls::net::cidr_merge.wrap()),
             "net.lookup_ip_addr" => Ok(crate::builtins::impls::net::lookup_ip_addr.wrap()),
@@ -324,6 +342,11 @@ pub mod tests {
     }
 
     impl EvaluationContext for TestContext {
+        type Helper = ();
+
+        fn helper(&mut self) -> Option<&mut Self::Helper> {
+            None
+        }
         #[cfg(feature = "rng")]
         type Rng = rand::rngs::StdRng;
 
@@ -351,7 +374,10 @@ pub mod tests {
             self.inner.cache_set(key, content)
         }
 
-        fn resolve_builtin<C: EvaluationContext>(&self, name: &str) -> Result<Box<dyn crate::builtins::traits::Builtin<C>>> {
+        fn resolve_builtin<C: EvaluationContext>(
+            &self,
+            name: &str,
+        ) -> Result<Box<dyn crate::builtins::traits::Builtin<C>>> {
             self.inner.resolve_builtin(name)
         }
     }

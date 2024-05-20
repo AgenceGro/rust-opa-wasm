@@ -89,7 +89,7 @@ where
         let res: Result<_> = map
             .into_iter()
             .map(|(k, v)| {
-                let builtin = context.resolve_builtin(&k)?;
+                let builtin = context.resolve_builtin::<C>(&k)?;
                 Ok((v.0, (k, builtin)))
             })
             .collect();
@@ -205,7 +205,10 @@ impl Runtime<DefaultContext> {
     }
 }
 
-impl<C> Runtime<C> {
+impl<C> Runtime<C>
+where
+    C: EvaluationContext,
+{
     /// Load a new WASM policy module into the given store, with a given
     /// evaluation context.
     ///
@@ -225,8 +228,6 @@ impl<C> Runtime<C> {
         module: &Module,
         context: C,
     ) -> Result<Self>
-    where
-        C: EvaluationContext,
     {
         let ty = MemoryType::new(2, None);
         let memory = Memory::new_async(&mut store, ty).await?;
@@ -384,7 +385,7 @@ impl<C> Runtime<C> {
         let builtins = opa_json_dump_func
             .decode(&mut store, &memory, &builtins)
             .await?;
-        let builtins = LoadedBuiltins::from_map(builtins, context)?;
+        let builtins = LoadedBuiltins::<C>::from_map(builtins, context)?;
         eventually_builtins.set(builtins)?;
 
         // Load the entrypoints map
