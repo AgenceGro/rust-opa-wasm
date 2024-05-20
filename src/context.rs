@@ -59,12 +59,6 @@ pub trait EvaluationContext: Send + 'static {
     ///
     /// Returns an error if the builtin is not known
     fn resolve_builtin<C: EvaluationContext>(&self, name: &str) -> Result<Box<dyn Builtin<C>>>;
-
-    ///
-    type Helper;
-
-    ///
-    fn helper(&mut self) -> Option<&mut Self::Helper>;
 }
 
 /// The default evaluation context implementation
@@ -88,12 +82,6 @@ impl Default for DefaultContext {
 }
 
 impl EvaluationContext for DefaultContext {
-    type Helper = ();
-
-    fn helper(&mut self) -> Option<&mut Self::Helper> {
-        None
-    }
-
     #[cfg(feature = "rng")]
     type Rng = rand::rngs::ThreadRng;
 
@@ -342,11 +330,6 @@ pub mod tests {
     }
 
     impl EvaluationContext for TestContext {
-        type Helper = ();
-
-        fn helper(&mut self) -> Option<&mut Self::Helper> {
-            None
-        }
         #[cfg(feature = "rng")]
         type Rng = rand::rngs::StdRng;
 
